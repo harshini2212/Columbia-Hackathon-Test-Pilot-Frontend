@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PIPELINE_STEPS } from "./PipelineSidebar";
 import { Plus, Trash2, Globe, ArrowRight, Check, Shield, Play, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,49 +63,60 @@ const UrlInputStep = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 const ProcessingStep = ({ title, description, items, onComplete }: { title: string; description: string; items: string[]; onComplete: () => void }) => {
-  const [processing, setProcessing] = useState(false);
-  const [done, setDone] = useState(false);
+  const [visibleItems, setVisibleItems] = useState<number>(0);
+  const [processing, setProcessing] = useState(true);
 
-  const handleRun = () => {
+  useEffect(() => {
+    setVisibleItems(0);
     setProcessing(true);
-    setTimeout(() => {
+
+    // Show items one by one
+    const timers: NodeJS.Timeout[] = [];
+    items.forEach((_, i) => {
+      timers.push(setTimeout(() => {
+        setVisibleItems(i + 1);
+      }, 600 + i * 500));
+    });
+
+    // Auto-complete after all items shown
+    const completeTimer = setTimeout(() => {
       setProcessing(false);
-      setDone(true);
-    }, 1500);
-  };
+      setTimeout(onComplete, 400);
+    }, 600 + items.length * 500 + 300);
+    timers.push(completeTimer);
+
+    return () => timers.forEach(clearTimeout);
+  }, [title]); // reset when step changes
 
   return (
     <div>
       <h1 className="text-3xl font-bold mb-2">{title}</h1>
       <p className="text-muted-foreground mb-8">{description}</p>
 
-      {!done ? (
-        <div className="text-center py-12">
-          <button
-            onClick={handleRun}
-            disabled={processing}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-70"
+      <div className="space-y-3 mb-8">
+        {items.map((item, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-all duration-300",
+              i < visibleItems ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            )}
           >
-            {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            {processing ? "Processing..." : `Run ${title}`}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3 mb-8">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+            {i < visibleItems ? (
               <Check className="h-4 w-4 text-success shrink-0" />
-              <span className="text-sm font-mono text-foreground">{item}</span>
-            </div>
-          ))}
-          <button
-            onClick={onComplete}
-            className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors ml-auto mt-4"
-          >
-            Continue <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+            ) : (
+              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
+            )}
+            <span className="text-sm font-mono text-foreground">{item}</span>
+          </div>
+        ))}
+        {processing && visibleItems < items.length && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Processing...
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -119,10 +130,15 @@ const PolicyStep = ({ onComplete }: { onComplete: () => void }) => {
     { name: "search_user", method: "GET", path: "/user/{username}", safety: "Read", execution: "Auto Execute", rateLimit: 60 },
   ];
 
+  useEffect(() => {
+    const timer = setTimeout(onComplete, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-2">Policy Configuration</h1>
-      <p className="text-muted-foreground mb-8">Configure safety rules, rate limits, and execution policies for each tool</p>
+      <p className="text-muted-foreground mb-8">Configuring safety rules, rate limits, and execution policies for each tool</p>
 
       <div className="rounded-xl border border-border overflow-hidden">
         <div className="grid grid-cols-[1fr_120px_140px_100px_40px] gap-4 px-6 py-3 border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -160,12 +176,10 @@ const PolicyStep = ({ onComplete }: { onComplete: () => void }) => {
         ))}
       </div>
 
-      <button
-        onClick={onComplete}
-        className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors ml-auto mt-6"
-      >
-        Continue <ArrowRight className="h-4 w-4" />
-      </button>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Auto-configuring policies...
+      </div>
     </div>
   );
 };
