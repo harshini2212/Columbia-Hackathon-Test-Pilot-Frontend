@@ -6,8 +6,8 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden surface-glow">
       {/* Subtle grid */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(hsl(170 80% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(170 80% 50%) 1px, transparent 1px)`,
+      <div className="absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage: `linear-gradient(hsl(260 60% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(260 60% 50%) 1px, transparent 1px)`,
         backgroundSize: '60px 60px'
       }} />
 
